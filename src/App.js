@@ -247,6 +247,18 @@ class App extends React.Component {
             .then(response => this.setState({ frontTab: [...this.state.editorData, neweditor].length-1, editorData: [...this.state.editorData, neweditor] }))
     }
 
+    refreshFile = () => {
+        var editor=this.state.frontTab
+        var filedir=this.state.editorData[editor].dir
+        if (!filedir.endsWith('/')) { filedir=filedir+'/' }
+        var newfile=filedir+this.state.editorData[editor].fileName
+
+        this.getFile(newfile)
+            .then(response => this.handleAceChange(response))
+    }
+
+
+
     getFile = (filename) => {
         return fetch('/file'+filename)
             .then((result)=>{ return result.text() })
