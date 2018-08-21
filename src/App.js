@@ -357,18 +357,17 @@ class App extends React.Component {
                                 )}
                             </Tabs>
                             :null }
-                            { this.state.editorData.length>0 ? 
-                            <Button color="inherit" onClick={ () => this.saveFile() } >Save</Button>
-                            :null }
-                            { this.state.editorData.length>0 ? 
-                            <IconButton
-                                color="inherit"
-                                aria-label="Open drawer"
-                                onClick={this.closeTab}
-                            >
-                                <ClearIcon />
-                            </IconButton>
-
+                            { this.state.editorData.length>0 ?
+                            <div>
+                                { this.state.editorData[this.state.frontTab].fileName.endsWith('.log') ?
+                                <Button color="inherit" onClick={ () => this.refreshFile() } >Refresh</Button>
+                                :
+                                <Button color="inherit" onClick={ () => this.saveFile() } >Save</Button>
+                                }
+                                <IconButton color="inherit" aria-label="Open drawer" onClick={this.closeTab}>
+                                    <ClearIcon />
+                                </IconButton>
+                            </div>
                             :null}
                         </Toolbar>
                     </AppBar>
