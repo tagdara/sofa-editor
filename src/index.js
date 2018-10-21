@@ -5,12 +5,13 @@ import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import deepOrange from '@material-ui/core/colors/deepOrange';
 import brown from '@material-ui/core/colors/brown';
 import grey from '@material-ui/core/colors/grey';
+import yellow from '@material-ui/core/colors/yellow';
 
 const theme = createMuiTheme({
   palette: {
     type: 'dark', // Switching the dark mode on is a single property value change.
         primary: deepOrange,
-        secondary: grey, // Indigo is probably a good match with pink
+        secondary: yellow,
   },
 });
 

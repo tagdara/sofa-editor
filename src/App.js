@@ -3,36 +3,49 @@ import { PropTypes } from 'prop-types';
 import classNames from 'classnames';
 import { withStyles } from '@material-ui/core/styles';
 import theme from './theme';
-import Drawer from '@material-ui/core/Drawer';
+
 import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
+import Avatar from '@material-ui/core/Avatar';
+import Button from '@material-ui/core/Button';
+import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
+import CardMedia from '@material-ui/core/CardMedia';
+import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
+import Divider from '@material-ui/core/Divider';
+import Drawer from '@material-ui/core/Drawer';
+import IconButton from '@material-ui/core/IconButton';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
-import NoteIcon from '@material-ui/icons/Note';
-import DescriptionIcon from '@material-ui/icons/Description';
-import FolderIcon from '@material-ui/icons/Folder';
-import Snackbar from '@material-ui/core/Snackbar';
 import MenuItem from '@material-ui/core/MenuItem';
-import Typography from '@material-ui/core/Typography';
+import Snackbar from '@material-ui/core/Snackbar';
+import Tab from '@material-ui/core/Tab';
+import Tabs from '@material-ui/core/Tabs';
 import TextField from '@material-ui/core/TextField';
-import Divider from '@material-ui/core/Divider';
-import IconButton from '@material-ui/core/IconButton';
+import Toolbar from '@material-ui/core/Toolbar';
+import Typography from '@material-ui/core/Typography';
+
 import MenuIcon from '@material-ui/icons/Menu';
 import ClearIcon from '@material-ui/icons/Clear';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
-import Button from '@material-ui/core/Button';
+import DescriptionIcon from '@material-ui/icons/Description';
+import FolderIcon from '@material-ui/icons/Folder';
+import NoteIcon from '@material-ui/icons/Note';
+
 import AceEditor from 'react-ace';
+import FilePicker from './filePicker';
+
 import brace from 'brace';
 import 'brace/ext/searchbox';
 import 'brace/mode/python';
 import 'brace/mode/jsx';
+import 'brace/mode/json';
+import 'brace/mode/html';
+import 'brace/mode/plain_text';
 import 'brace/theme/twilight';
-
 
 const drawerWidth = 320;
 
@@ -64,12 +77,7 @@ const styles = {
             easing: theme.transitions.easing.easeOut,
             duration: theme.transitions.duration.enteringScreen,
         }),
-    },
-    'appBarShift-left': {
         marginLeft: drawerWidth,
-    },
-    'appBarShift-right': {
-        marginRight: drawerWidth,
     },
     menuButton: {
         marginLeft: 12,
@@ -90,10 +98,11 @@ const styles = {
         ...theme.mixins.toolbar,
     },
     content: {
+        justifyContent: "center",
         flexGrow: 1,
         display: 'flex',
         paddingTop: 64,
-        backgroundColor: "#222",
+
         padding: theme.spacing.unit * 0,
         transition: theme.transitions.create('margin', {
             easing: theme.transitions.easing.sharp,
@@ -136,17 +145,27 @@ const styles = {
     },
     editorHolder: {
         backgroundColor: "#222",
-        display: "block",
+        display: "flex",
         height: "100%",
         width: "100%",
+        justifyContent: "center",
     },
+    dirList: {
+        overflowY: "scroll",
+        overflowX: "hidden",
+    },
+    startCard: {
+        maxWidth: 480,
+        maxHeight: 240,
+        margin: 24,
+    }
 }
 
 
 class App extends React.Component {
     
     state = {
-        open: false,
+        open: true,
         anchor: 'left',
         frontTab: 0,
         editorFilea: "",
@@ -177,7 +196,6 @@ class App extends React.Component {
     handleDrawerOpen = () => {
         this.getDirectory(this.state.startdir);
         this.setState({ open: true });
-        console.log(this.props)
     };
 
     handleDrawerClose = () => {
@@ -236,6 +254,17 @@ class App extends React.Component {
         return fetch('/file/opt/se/src/'+filename)
             .then((result)=>{ return result.text() })
     }
+    
+    modeByFilename = (filename) => {
+        var knowntypes={'py':'python','js':'jsx','jsx':'jsx','json':'json','html':'html','log':'python'}
+        var ext = filename.substr(filename.lastIndexOf('.') + 1);
+        if (Object.keys(knowntypes).includes(ext)) {
+            return knowntypes[ext]
+        } else {
+            return 'plain_text'
+        }
+
+    }
 
     openFileTab = (filedir,filename) => {
         if (!filedir.endsWith('/')) { filedir=filedir+'/' }
@@ -243,7 +272,7 @@ class App extends React.Component {
 
         var neweditor={}
         this.getFile(newfile)
-            .then(response => neweditor = {'dir':filedir, 'fileName':filename, 'changed':false, 'content':response })
+            .then(response => neweditor = {'dir':filedir, 'fileName':filename, 'changed':false, 'content':response, 'mode':this.modeByFilename(filename) })
             .then(response => this.setState({ frontTab: [...this.state.editorData, neweditor].length-1, editorData: [...this.state.editorData, neweditor] }))
     }
 
@@ -312,40 +341,17 @@ class App extends React.Component {
                     </IconButton>
                 </div>
                 <Divider />
-                <List>
-                    <ListItem key={ 'uponedir' } name={ 'uponedir' } onClick={ ()=> this.goUpDir()}>
-                        <ListItemIcon>
-                            <FolderIcon />
-                        </ListItemIcon>
-                        <ListItemText primary='..' />
-                    </ListItem> 
-                    {
-		            this.state.alldirs.map((dir) => {
-		                return dir.type == 'folder' ?
-                            <ListItem key={ dir.path+dir.name } name={ dir.name } onClick={ ()=> this.setStartDir(dir.path,dir.name)}>
-                                <ListItemIcon>
-                                    <FolderIcon />
-                                </ListItemIcon>
-                                <ListItemText primary={dir.name} />
-                            </ListItem> 
-		                    :
-                            <ListItem key={ dir.path+dir.name } name={ dir.name } onClick={ ()=> this.openFileTab(dir.path,dir.name)}>
-                                <ListItemIcon>
-                                    <DescriptionIcon />
-                                </ListItemIcon>
-                                <ListItemText primary={dir.name} />
-                            </ListItem> 
-		                }
-                    )}
-	            </List>
+                <div className={classes.dirList}>
+                <FilePicker startdir={this.state.startdir} openFile={this.openFileTab} />
+	            </div>
 	           <Divider />
             </Drawer>
         );
 
         return (
                 <div className={classes.appFrame}>
-                    <AppBar className={classNames(classes.appBar, { [classes.appBarShift]: open, [classes[`appBarShift-${anchor}`]]: open, })} >
-                        <Toolbar disableGutters={!open} >
+                    <AppBar className={classNames(classes.appBar, { [classes.appBarShift]: open })} >
+                        <Toolbar disableGutters >
                             <IconButton
                                 color="inherit"
                                 aria-label="Open drawer"
@@ -355,22 +361,18 @@ class App extends React.Component {
                                 <MenuIcon />
                             </IconButton>
                             { this.state.editorData.length>0 ?
-                            <Tabs
-                                className={classes.tabs}
-                                value={this.state.frontTab}
-                                onChange={this.handleChange}
-                                scrollable
-                                scrollButtons="auto"
-                            >
-                                {
-                                    this.state.editorData.map((editor, index) =>
-                                        <Tab key={"tab"+index} label={editor.changed ? editor.fileName+" *" : editor.fileName} />
-                                        
+                                <React.Fragment>
+                                <Tabs
+                                    className={classes.tabs}
+                                    value={this.state.frontTab}
+                                    onChange={this.handleChange}
+                                    scrollable
+                                    scrollButtons="auto"
+                                >
+                                { this.state.editorData.map((editor, index) =>
+                                    <Tab key={"tab"+index} label={editor.changed ? editor.fileName+" *" : editor.fileName} />
                                 )}
-                            </Tabs>
-                            :null }
-                            { this.state.editorData.length>0 ?
-                            <div>
+                                </Tabs>
                                 { this.state.editorData[this.state.frontTab].fileName.endsWith('.log') ?
                                 <Button color="inherit" onClick={ () => this.refreshFile() } >Refresh</Button>
                                 :
@@ -379,7 +381,7 @@ class App extends React.Component {
                                 <IconButton color="inherit" aria-label="Open drawer" onClick={this.closeTab}>
                                     <ClearIcon />
                                 </IconButton>
-                            </div>
+                                </React.Fragment>
                             :null}
                         </Toolbar>
                     </AppBar>
@@ -392,15 +394,20 @@ class App extends React.Component {
                     >
                         <div className={classes.editorHolder}>
                         { this.state.editorData.length<1 ?
-                            <Typography>Open a file from the left menu to begin.</Typography>
-                            : null }
-                        
-                            {
+                            <Card className={classes.startCard}>
+                                <CardHeader 
+                                    avatar={<Avatar>S</Avatar>}
+                                    title="Sofa Editor" />
+                                <CardContent>
+                                    <Typography>Open a file from the left menu to begin.</Typography>
+                                </CardContent>
+                            </Card>
+                            : 
                                 this.state.editorData.map((editor, index) =>
                                     <AceEditor
                                         key={"editor"+index}
                                         className={this.state.frontTab === index ? classes.active : classes.hidden}
-                                        mode="jsx"
+                                        mode={editor.mode}
                                         theme="twilight"
                                         fontSize={16}
                                         name={"editor"+index}
