@@ -30,6 +30,7 @@
     "material-ui": "^0.20.2",
     "react": "^16.4.2",
     "react-ace": "^6.1.4",
+    "react-contextmenu": "^2.9.4",
     "react-dom": "^16.4.2"
   }
 }

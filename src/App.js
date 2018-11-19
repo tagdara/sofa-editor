@@ -181,8 +181,14 @@ class App extends React.Component {
 
 
     focusAndSize = (frontTab) => {
+        console.log('focus')
         this.refs['ed'+frontTab].editor.focus()
         this.refs['ed'+frontTab].editor.resize()
+        if (this.state.editorData[this.state.frontTab].fileName) {
+            document.title = this.state.editorData[frontTab].fileName
+        } else {
+            document.title = 'Sofa Editor'
+        }
     }
 
     handleChange = (event, frontTab) => {
@@ -274,6 +280,7 @@ class App extends React.Component {
         this.getFile(newfile)
             .then(response => neweditor = {'dir':filedir, 'fileName':filename, 'changed':false, 'content':response, 'mode':this.modeByFilename(filename) })
             .then(response => this.setState({ frontTab: [...this.state.editorData, neweditor].length-1, editorData: [...this.state.editorData, neweditor] }))
+            .then(document.title = filename)
     }
 
     refreshFile = () => {
