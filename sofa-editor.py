@@ -29,7 +29,7 @@ class sofaEditorServer():
             self.serverApp.router.add_get('/file/{path:.+}', self.file_handler)
             self.serverApp.router.add_post('/save/{path:.+}', self.save_handler_post)
 
-            self.serverApp.router.add_static('/new/', path=self.config['client'])
+            self.serverApp.router.add_static('/', path=self.config['client'])
 
             self.runner = aiohttp.web.AppRunner(self.serverApp)
             self.loop.run_until_complete(self.runner.setup())
@@ -56,7 +56,7 @@ class sofaEditorServer():
 
     async def root_handler(self, request):
         self.log.info('<- %s session start' % (request.transport.get_extra_info('peername')[0]))
-        return web.FileResponse('/opt/se/dist/index.html')
+        return web.FileResponse(os.path.join(self.config['client'],"index.html"))
 
     async def save_handler_post(self, request):
         
@@ -208,8 +208,8 @@ class sofaeditor(object):
 
         log_formatter = logging.Formatter('%(asctime)-6s.%(msecs).03d %(levelname).1s%(lineno)4d: %(message)s','%m/%d %H:%M:%S')
         #check if a log file already exists and if so rotate it
-        needRoll = os.path.isfile("/var/log/sofaeditor.log")
-        logFile = "/var/log/sofaeditor.log"
+        logFile=os.path.join(self.config["log_directory"],"sofaeditor.log")
+        needRoll = os.path.isfile(logFile)
         log_handler = RotatingFileHandler(logFile, mode='a', maxBytes=1024*1024, backupCount=5)
         log_handler.setFormatter(log_formatter)
         log_handler.setLevel(getattr(logging,level))
@@ -223,9 +223,9 @@ class sofaeditor(object):
 
     def __init__(self):
         self.loop = asyncio.new_event_loop()
-        self.logsetup()
         self.loop.run_until_complete(self.get_config('./config.json'))
-  
+        self.logsetup()
+
     def start(self):
         try:
             self.log.info('.. Starting editor server')

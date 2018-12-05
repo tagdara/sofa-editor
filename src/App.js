@@ -271,6 +271,16 @@ class App extends React.Component {
         }
 
     }
+    
+    formatSpecialFiles = (filename, filedata) => {
+        var mode=this.modeByFilename(filename)
+        if (mode=='json') {
+            var o = JSON.parse(filedata) // may throw if json is malformed
+            return JSON.stringify(o, null, 4)
+        } else {
+            return filedata
+        }
+    }
 
     openFileTab = (filedir,filename) => {
         if (!filedir.endsWith('/')) { filedir=filedir+'/' }
@@ -278,6 +288,7 @@ class App extends React.Component {
 
         var neweditor={}
         this.getFile(newfile)
+            .then(response => this.formatSpecialFiles(filename, response))
             .then(response => neweditor = {'dir':filedir, 'fileName':filename, 'changed':false, 'content':response, 'mode':this.modeByFilename(filename) })
             .then(response => this.setState({ frontTab: [...this.state.editorData, neweditor].length-1, editorData: [...this.state.editorData, neweditor] }))
             .then(document.title = filename)
