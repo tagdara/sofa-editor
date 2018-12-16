@@ -1,0 +1,6 @@
+[
+    {"name": "var/log/sofa", "path": "/", "type":"folder", "icon":"folder" },
+    {"name": "opt/sofa-server", "path": "/", "type":"folder", "icon":"folder" },
+    {"name": "opt/sofa-editor", "path": "/", "type":"folder", "icon":"folder" },
+    {"name": "opt/sofa-client", "path": "/", "type":"folder", "icon":"folder" }
+]

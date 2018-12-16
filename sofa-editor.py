@@ -29,6 +29,8 @@ class sofaEditorServer():
             self.serverApp.router.add_get('/file/{path:.+}', self.file_handler)
             self.serverApp.router.add_post('/save/{path:.+}', self.save_handler_post)
 
+            self.serverApp.router.add_get('/favorites', self.favorites_handler)
+
             self.serverApp.router.add_static('/', path=self.config['client'])
 
             self.runner = aiohttp.web.AppRunner(self.serverApp)
@@ -89,7 +91,7 @@ class sofaEditorServer():
             path="/"
             if 'path' in request.match_info:
                 path=request.match_info['path']
-            dirlist=self.app.get_directory(path)
+            dirlist=await self.app.get_directory(path)
             self.log.info('<- %s dir: %s' % (request.transport.get_extra_info('peername')[0], path))
             return web.Response(text=json.dumps(dirlist, default=self.date_handler))
         except:
@@ -105,12 +107,37 @@ class sofaEditorServer():
                 body=json.loads(body.decode())
                 path=body['startdir']
             self.log.info('<- %s dir: %s' % (request.transport.get_extra_info('peername')[0], path))
-            dirlist=await self.app.get_directory(path)
+            if path=='/favorites':
+                dirlist=await get_favorites()
+            else:
+                dirlist=await self.app.get_directory(path)
             return web.Response(text=json.dumps(dirlist, default=self.date_handler))
         except:
             self.log.info('error handling directory request: %s' % path, exc_info=True)
             return web.Response(text='[]')
 
+    async def get_favorites(self):
+
+        try:
+            async with aiofiles.open('/opt/sofa-editor/favorites.json', mode='r') as f:
+                result = await f.read()
+                favs=json.loads(result)
+            return favs
+        except:
+            self.log.info('error getting favorites', exc_info=True)
+            return []
+        
+
+    async def favorites_handler(self, request):
+        
+        try:
+            favs=await self.get_favorites()
+            return web.Response(text=json.dumps(favs, default=self.date_handler))
+        except:
+            self.log.info('error getting favorites', exc_info=True)
+            return web.Response(text='[]')
+
+        
 
     async def file_handler(self, request):
         
@@ -182,6 +209,7 @@ class sofaeditor(object):
             all_list=[]
             filelist=[]
             dirlist=[]
+            self.log.info(' path: %s / %s' % (self.config, path))
             dirpath=os.path.join(self.config['path'], path)
             
             for file in os.listdir(dirpath):
