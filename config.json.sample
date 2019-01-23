@@ -1,0 +1,12 @@
+{
+    "path": "/",
+    "port": 8443,
+    "cert": "/opt/cert/editor.crt",
+    "key": "/opt/cert/editor.key",
+    "ca": "/opt/cert/ca.crt",
+    "excluded": [
+        ".pyc"
+    ],
+    "client": "/opt/sofa-editor/dist",
+    "log_directory": "/var/log/sofa"
+}

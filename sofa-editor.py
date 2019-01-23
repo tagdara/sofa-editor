@@ -9,6 +9,8 @@ import concurrent.futures
 import aiofiles
 import datetime
 import os
+import socket
+import sys
 from os.path import isfile, isdir, join
 
 import logging
@@ -44,8 +46,13 @@ class sofaEditorServer():
             self.site = web.TCPSite(self.runner, self.config['hostname'], self.config['port'], ssl_context=self.ssl_context)
             self.log.info('Starting editor webserver at https://%s:%s' % (self.config['hostname'], self.config['port']))
             self.loop.run_until_complete(self.site.start())
+            return True
+        except socket.gaierror:
+            self.log.error('Error - DNS or network down during intialize.', exc_info=True)
+            return False
         except:
             self.log.error('Error starting REST server', exc_info=True)
+            return False
 
 
     def date_handler(self, obj):
@@ -232,45 +239,65 @@ class sofaeditor(object):
             self.log.error('An error occurred while getting directory: %s' % path, exc_info=True)
             return []
 
-    def logsetup(self, level="INFO", errorOnly=[]):
+    def logsetup(self, logbasepath, logname, level="INFO", errorOnly=[]):
 
+        #log_formatter = logging.Formatter('%(asctime)-6s.%(msecs).03d %(levelname).1s %(lineno)4d %(threadName)-.1s: %(message)s','%m/%d %H:%M:%S')
         log_formatter = logging.Formatter('%(asctime)-6s.%(msecs).03d %(levelname).1s%(lineno)4d: %(message)s','%m/%d %H:%M:%S')
+        logpath=os.path.join(logbasepath, logname)
+        logfile=os.path.join(logpath,"%s.log" % logname)
+        loglink=os.path.join(logbasepath,"%s.log" % logname)
+        if not os.path.exists(logpath):
+            os.makedirs(logpath)
         #check if a log file already exists and if so rotate it
-        logFile=os.path.join(self.config["log_directory"],"sofaeditor.log")
-        needRoll = os.path.isfile(logFile)
-        log_handler = RotatingFileHandler(logFile, mode='a', maxBytes=1024*1024, backupCount=5)
+
+        needRoll = os.path.isfile(logfile)
+        log_handler = RotatingFileHandler(logfile, mode='a', maxBytes=1024*1024, backupCount=5)
         log_handler.setFormatter(log_formatter)
         log_handler.setLevel(getattr(logging,level))
         if needRoll:
             log_handler.doRollover()
+            
+        console = logging.StreamHandler()
+        console.setFormatter(log_handler)
+        console.setLevel(logging.INFO)
+        
+        logging.getLogger(logname).addHandler(console)
 
-        self.log =  logging.getLogger('editor')
+        self.log =  logging.getLogger(logname)
         self.log.setLevel(logging.INFO)
         self.log.addHandler(log_handler)
+        if not os.path.exists(loglink):
+            os.symlink(logfile, loglink)
+        
         self.log.info('-- -----------------------------------------------')
 
     def __init__(self):
+        self.error_state=False
         self.loop = asyncio.new_event_loop()
         self.loop.run_until_complete(self.get_config('./config.json'))
-        self.logsetup()
+        self.logsetup(self.config["log_directory"], 'editor')
 
     def start(self):
         try:
             self.log.info('.. Starting editor server')
             asyncio.set_event_loop(self.loop)
             self.server = sofaEditorServer(config=self.config, loop=self.loop, log=self.log, app=self)
-            self.server.initialize()
-            self.loop.run_forever()
+            result=self.server.initialize()
+            if result:
+                self.loop.run_forever()
+            else:
+                self.error_state=True
         except KeyboardInterrupt:  # pragma: no cover
             pass
         except:
             self.log.error('Loop terminated', exc_info=True)
         finally:
             self.server.shutdown()
-            #self.executor.shutdown()
         
         self.log.info('.. stopping sofa editor')
         self.loop.close()
+        if self.error_state:
+            sys.exit(1)
 
 
 if __name__ == '__main__':
