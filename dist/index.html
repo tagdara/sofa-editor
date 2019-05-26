@@ -14,10 +14,33 @@
         <title>Sofa Editor</title>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-
+        <Style>
+            html {
+                height: 100%;
+                padding:0;
+                margin:0;
+            }
+            body {
+                height: 100%;
+                -webkit-user-select: none;
+                -webkit-tap-highlight-color: transparent;
+                padding: 0;
+                margin:0;
+            }
+            #root {
+                height: 100%;
+                position:fixed;
+                width: 100%;
+                top: 0;
+                bottom:0;
+                padding:0;
+                margin:0;
+                display:flex;
+            }
+        </Style>
     </head>
-    <body style="margin: 0; position: fixed; top: 0; bottom: 0; left: 0; right: 0;">
-        <div id="content" style="display:flex; flex-grow:1; height: 100%"></div>
+    <body>
+        <div id="root"></div>
         <script src="/bundle.js" type="text/javascript"></script>
     </body>
 </html>

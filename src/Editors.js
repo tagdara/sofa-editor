@@ -1,7 +1,6 @@
-import React from 'react';
-import { PropTypes } from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
-import { withTheme } from '@material-ui/core/styles';
+import React, { Component, memo } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { makeStyles, useTheme } from '@material-ui/styles';
 
 import AceEditor from 'react-ace';
 
@@ -15,24 +14,31 @@ import 'brace/mode/plain_text';
 import 'brace/theme/twilight';
 import 'brace/theme/tomorrow';
 
-const styles = theme => ({
+const useStyles = makeStyles( theme => ({
     
     hidden: {
         display: "none",
     },
     active: {
-        display: "block",
+        display: "flex",
     },
 
-})
 
-class Editors extends React.Component {
 
-    focusAndSize = (index) => {
-        if (index==this.props.frontEditor) {
-            if (this.refs['ed'+index]!==undefined) {
-                this.refs['ed'+index].editor.focus()
-                this.refs['ed'+index].editor.resize()
+
+}))
+
+function Editors(props) {
+    
+    const classes = useStyles();
+    const theme = useTheme();
+    let refs = useRef(new Map()).current;
+    
+    function focusAndSize(index) {
+        if (index==props.frontEditor) {
+            if (refs['ed'+index]!==undefined) {
+                refs['ed'+index].editor.focus()
+                refs['ed'+index].editor.resize()
             }
             return true
         } else {
@@ -40,37 +46,25 @@ class Editors extends React.Component {
         }
     }
     
-    render() {
+    return props.editorData.map((editor, index) =>
+                <AceEditor
+                    key={"editor"+index}
+                    className={props.frontEditor === index ? classes.active : classes.hidden}
+                    mode={editor.mode}
+                    theme={ theme.palette.type=="light" ?  "tomorrow" : "twilight" }
+                    fontSize={16}
+                    name={"editor"+index}
+                    onChange={props.handleAceChange}
+                    value={editor.content}
+                    editorProps={{ $blockScrolling: true }}
+                    width="100%"
+                    height="100%"
+                    ref={ inst => inst === null ? refs.delete("ed"+index) : refs.set("ed"+index, inst)}
+                    showPrintMargin={false}
+                    focus={focusAndSize(index)}
+                />
+            )
 
-        const { classes, editorData, frontEditor, theme } = this.props;
-
-        return (
-            <React.Fragment>
-                { editorData.map((editor, index) =>
-                    <AceEditor
-                        key={"editor"+index}
-                        className={frontEditor === index ? classes.active : classes.hidden}
-                        mode={editor.mode}
-                        theme={ theme.palette.type=="light" ?  "tomorrow" : "twilight" }
-                        fontSize={16}
-                        name={"editor"+index}
-                        onChange={this.props.handleAceChange}
-                        value={editor.content}
-                        editorProps={{ $blockScrolling: true }}
-                        width="100%"
-                        height="100%"
-                        ref={"ed"+index}
-                        showPrintMargin={false}
-                        focus={this.focusAndSize(index)}
-                    />
-                )}
-            </React.Fragment>
-        );
-    }
 }
 
-Editors.propTypes = {
-    classes: PropTypes.object.isRequired,
-};
-
-export default withTheme()(withStyles(styles)(Editors));
+export default Editors;

@@ -4,8 +4,11 @@ import indigo from '@material-ui/core/colors/indigo';
 import red from '@material-ui/core/colors/red';
 import yellow from '@material-ui/core/colors/yellow';
 
-
 export default createMuiTheme({
+    direction: "ltr",
+    typography: {
+        useNextVariants: true,
+    },
     palette: {
         primary: {
             light: deepOrange[300],
@@ -17,6 +20,9 @@ export default createMuiTheme({
             main: yellow[500],
             dark: yellow[700]
         },
-        type: "light"
+        text: {
+            primary: "#e0e0e0",
+        },
+        type: "dark"
     }
-})
+});

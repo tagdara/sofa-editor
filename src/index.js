@@ -2,18 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
 
-import DataProvider from './Theme/DataProvider';
-import ThemeWrapper from './Theme/ThemeWrapper';
+import SofaThemeProvider from './theme/SofaTheme';
 
-
-const rootElement = document.querySelector('#content');
+const rootElement = document.querySelector('#root');
 
 if (rootElement) {
     ReactDOM.render(
-        <DataProvider>
-            <ThemeWrapper>
-                <App />
-            </ThemeWrapper>
-        </DataProvider>
+        <SofaThemeProvider>
+            <App />
+        </SofaThemeProvider>
     , rootElement);
 }

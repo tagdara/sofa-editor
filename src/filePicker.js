@@ -1,7 +1,6 @@
-import React from 'react';
-import { PropTypes } from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
-import { withTheme } from '@material-ui/core/styles';
+import React, { Component, memo } from 'react';
+import { useState, useEffect } from 'react';
+import { makeStyles, useTheme } from '@material-ui/styles';
 
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -14,8 +13,9 @@ import FolderSpecialIcon from '@material-ui/icons/FolderSpecial';
 import BookIcon from '@material-ui/icons/Book';
 
 import Typography from '@material-ui/core/Typography';
+import { Scrollbars } from 'react-custom-scrollbars';
 
-const styles  = theme =>  ({
+const useStyles = makeStyles({
 
     root: {
         flexGrow: 1,
@@ -26,68 +26,61 @@ const styles  = theme =>  ({
     },
 });
 
-class FilePicker extends React.Component {
-    
-    state = {
-        dirs: [],
-        alldirs: [],
-        startdir: "/",
-        favorites: [],
-    };
+export default function FilePicker(props) {
 
-    setStartDir = (currentdir, newdir) => {
-        this.props.endFavoritesMode()
+    const classes = useStyles();
+    const [dirs, setDirs] = useState([]);
+    const [alldirs, setAllDirs] = useState([]);
+    const [startdir, setStartDir] = useState('/');
+    const [favorites, setFavorites] = useState([]);
+    
+    useEffect(() => {
+        getFavorites()
+        getDirectory(props.startdir)
+    }, []);
+   
+    
+    function changeStartDir(currentdir, newdir) {
+        props.endFavoritesMode()
         if (!currentdir.endsWith('/')) { currentdir=currentdir+'/' }
         var newstartdir=currentdir+newdir
-        this.setState({startdir:newstartdir}, () => {
-            this.getDirectory(newstartdir) }
-        )
+        setStartDir(newstartdir)
+        getDirectory(newstartdir) 
+
     }
     
-    goUpDir = () => {
-        var dirs = this.state.startdir.split('/');
+    function goUpDir() {
+        var dirs = startdir.split('/');
         dirs.pop();
         var newstartdir=dirs.join('/')
         if (!newstartdir) { newstartdir="/" }
-        this.setState({startdir:newstartdir},
-            () => { this.getDirectory(newstartdir) }
-        )
+        setStartDir(newstartdir)
+        getDirectory(newstartdir) 
     }
     
-    getFavorites = () => {
+    function getFavorites() {
         fetch('/favorites')
             .then(result=>result.json())
-            .then(result=>this.setState({favorites: result})
-        )
+            .then(result=>setFavorites(result))
     }
     
-    getDirectory = (dirname) => {
+    function getDirectory(dirname) {
 
         fetch('/dir', { method: 'post', body: JSON.stringify({ "startdir" : dirname }) })
             .then(result=>result.json())
-            .then(data=>this.setState({startdir: dirname, alldirs: data}))
-    }
-  
-    componentDidMount() {
-        this.getFavorites()
-        this.getDirectory(this.props.startdir)
-        
+            .then(data=> { setStartDir(dirname); setAllDirs(data); })
     }
 
-    render() {
-        
-        const { classes, favoritesMode } = this.props;
-        
-        return (
-
+    return (
+        <Scrollbars>
             <div className={classes.dirList} >
-                { favoritesMode ?
+                { props.favoritesMode ?
                     <List>
-                        { this.state.favorites.map((dir) => 
+                        { favorites.map((dir) => 
                             <ListItem button name={ dir.name }  key={ dir.name }
                                 onClick={ dir.type == 'folder' ? 
-                                    ()=> this.setStartDir(dir.path,dir.name) :
-                                    ()=> this.props.openFile(dir.path,dir.name) 
+                                    ()=> changeStartDir(dir.path,dir.name) :
+                                    ()=> openFile(dir.path,dir.name) 
                                 }
                             >
                                 <ListItemIcon>
@@ -99,19 +92,19 @@ class FilePicker extends React.Component {
                     </List>
                 :
                     <List >
-                        { this.state.startdir != '/' ?
-                            <ListItem button key={ 'uponedir' } name={ 'uponedir' } onClick={ ()=> this.goUpDir()}>
+                        { startdir != '/' ?
+                            <ListItem button key={ 'uponedir' } name={ 'uponedir' } onClick={ ()=> goUpDir()}>
                                 <ListItemIcon>
                                     <FolderIcon />
                                 </ListItemIcon>
                                 <ListItemText primary='..' />
                             </ListItem>
                         : null }
-                        { this.state.alldirs.map((dir) => 
+                        { alldirs.map((dir) => 
                                 <ListItem button name={ dir.name } key={ dir.name }
                                             onClick={ dir.type == 'folder' ? 
-                                                ()=> this.setStartDir(dir.path,dir.name) :
-                                                ()=> this.props.openFile(dir.path,dir.name) 
+                                                ()=> changeStartDir(dir.path,dir.name) :
+                                                ()=> props.openFile(dir.path,dir.name) 
                                             }
                                 >
                                     <ListItemIcon>
@@ -122,14 +115,7 @@ class FilePicker extends React.Component {
                         )}
                     </List>
                 }
-            </div>            
-        );
-    }
+            </div>
+        </Scrollbars>
+    );
 }
-
-FilePicker.propTypes = {
-    classes: PropTypes.object.isRequired,
-};
-
-//export default withStyles(styles, { withTheme: true })(App);
-export default withTheme()(withStyles(styles)(FilePicker));

@@ -1,10 +1,12 @@
-import React from 'react';
-import { PropTypes } from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
-import { withTheme } from '@material-ui/core/styles';
+import React, { Component, memo } from 'react';
+import { useState, useEffect} from 'react';
+import { makeStyles, useTheme } from '@material-ui/styles';
+import CssBaseline from "@material-ui/core/CssBaseline";
 
 import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
+import Paper from '@material-ui/core/Paper';
+
 import MenuIcon from '@material-ui/icons/Menu';
 import ClearIcon from '@material-ui/icons/Clear';
 
@@ -17,140 +19,123 @@ import Editors from './Editors';
 
 const drawerWidth = 320;
 
-const styles = theme => ({
+const useStyles = makeStyles( theme => ({
     
-    appFrame: {
-        zIndex: 1,
-        overflow: 'hidden',
-        position: 'relative',
-        display: 'flex',
-        width: '100%',
-    },
-    menuButton: {
-        marginLeft: 12,
-        marginRight: 20,
-    },
     content: {
+        boxSizing: "border-box",
         justifyContent: "center",
         flexGrow: 1,
         display: 'flex',
         paddingTop: 64,
-        padding: theme.spacing.unit * 0,
-        transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
+        padding: 0,
         marginLeft: 0,
         height: "100%",
     },
     contentShift: {
+        boxSizing: "border-box",
         justifyContent: "center",
         flexGrow: 1,
         display: 'flex',
         paddingTop: 64,
-        padding: theme.spacing.unit * 0,
-        transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
+        padding: 0,
         marginLeft: -drawerWidth,
         height: "100%",
     },
-}); 
+})); 
 
-
-class App extends React.Component {
+export default function App(props) {
     
-    state = {
-        open: true,
-        frontTab: 0,
-        editorFilea: "",
-        editorContenta: "",
-        editorContentb: "",
-        dirs: [],
-        alldirs: [],
-        startdir: "/",
-        editorData: [],
-        snackbarOpen: false,
-        lastDir: "",
-        favoritesMode: false,
-    };
+    const classes = useStyles();
+    const [open, setOpen] = useState(true);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [favoritesMode, setFavoritesMode] = useState(false);
+    const [frontTab, setFrontTab] = useState(-1);
+    const [startDir, setStartDir] = useState("/");
+    const [lastDir, setLastDir] = useState("/");
+    const [editorData, setEditorData] = useState([]);    
 
 
-    setTitle = (tab) => {
-        if (this.state.editorData[tab].fileName) {
-            document.title = this.state.editorData[tab].fileName
+    function setTitle(tab) {
+        if (tab>-1 && editorData[tab].fileName) {
+            document.title = editorData[tab].fileName
         } else {
             document.title = 'Sofa Editor'
         }
     }
 
-    handleChange = (event, frontTab) => {
-        this.setState({ frontTab: frontTab },
-            () => {
-                this.setTitle(frontTab)
-            }
-        );
+    function handleChange(event, newFrontTab) {
+        setFrontTab(newFrontTab)
+        setTitle(newFrontTab)
     };
 
-    handleFavorites = () => {
-        if (this.state.favorites) {
-            this.setState({ favoritesMode: false, startdir: this.state.lastdir })
+    function handleFavorites() {
+        if (favoritesMode) {
+            setFavoritesMode(false)
+            setStartDir(lastDir)
         } else {
-            this.setState({ favoritesMode: true, lastdir: this.state.startdir })
+            setFavoritesMode(true)
+            setLastDir(startDir)
         }
     }
     
-    endFavoritesMode = () => {
-        this.setState({ favoritesMode: false })
+    function endFavoritesMode() {
+        setFavoritesMode(false)
     }
 
-    handleDrawerOpen = () => {
-        this.setState({ open: true });
+    function handleDrawerOpen() {
+        setOpen(true);
     };
 
-    handleDrawerClose = () => {
-        this.setState({ open: false });
+    function handleDrawerClose() {
+        setOpen(false);
     };
 
-    handleAceChange = (newValue) => {
+    function handleAceChange(newValue) {
         if (newValue) {
-            var temped=this.state.editorData;
-            temped[this.state.frontTab].content=newValue
-            temped[this.state.frontTab].changed=true
-            this.setState({ editorData: temped })
+            var temped=[...editorData];
+            temped[frontTab].content=newValue
+            temped[frontTab].changed=true
+            setEditorData(temped)
         }
     }
   
-    saveFile = (editor) => {
-        editor=this.state.frontTab
-        var filedir=this.state.editorData[editor].dir
-        if (!filedir.endsWith('/')) { filedir=filedir+'/' }
-        
-        fetch('/save'+filedir+this.state.editorData[editor].fileName, {
-                method: 'post',
-                body: this.state.editorData[editor].content,
-                }
-        )
-        .then(this.setState({ snackbarOpen: true }))
-        .then(this.clearChange(editor));
+    function saveFile(editor) {
+        editor=frontTab
+        if (editor>-1) {
+            var filedir=editorData[editor].dir
+            if (!filedir.endsWith('/')) { filedir=filedir+'/' }
+            
+            fetch('/save'+filedir+editorData[editor].fileName, {
+                    method: 'post',
+                    body: editorData[editor].content,
+                    }
+            )
+            .then(setSnackbarOpen(true))
+            .then(clearChange(editor));
+        }
     }
 
-    closeTab = () => {
-        var editor=this.state.frontTab
-        var newstate=this.state.editorData
+    function closeTab() {
+        var editor=frontTab
+        var newstate=[...editorData]
         newstate.splice(editor, 1)
-        if (editor>newstate.length-1) { editor=editor-1 }
-        this.setState({ editorData: newstate, frontTab: editor})
+        setEditorData(newstate)
+        if (editor>newstate.length-1) { editor=newstate.length-1 }
+        setFrontTab(editor)
+        if (newstate.length>0) {
+            document.title = newstate[editor].fileName
+        } else {
+            document.title = 'Sofa Editor'
+        }
     }
     
-    clearChange = (editor) => {
-        var temped=this.state.editorData;
-        temped[this.state.frontTab].changed=false
-        this.setState({ editorData: temped })        
+    function clearChange(editor) {
+        var temped=editorData;
+        temped[frontTab].changed=false
+        setEditorData(temped)        
     }
 
-    modeByFilename = (filename) => {
+    function modeByFilename(filename) {
         var knowntypes={'py':'python','js':'jsx','jsx':'jsx','json':'json','html':'html','log':'python'}
         var ext = filename.substr(filename.lastIndexOf('.') + 1);
         if (Object.keys(knowntypes).includes(ext)) {
@@ -160,81 +145,82 @@ class App extends React.Component {
         }
     }
     
-    formatSpecialFiles = (filename, filedata) => {
-        var mode=this.modeByFilename(filename)
+    function formatSpecialFiles (filename, filedata) {
+        var mode=modeByFilename(filename)
         if (mode=='json') {
-            var o = JSON.parse(filedata) // may throw if json is malformed
-            return JSON.stringify(o, null, 4)
-        } else {
-            return filedata
-        }
+            try {
+                var o = JSON.parse(filedata) // may throw if json is malformed
+                return JSON.stringify(o, null, 4)
+            } catch (e) {
+                console.log('Improper JSON')
+            }
+        } 
+        return filedata
+
     }
 
-    openFileTab = (filedir,filename) => {
+    function handleOpenFile(neweditor) {
+        var newdata=[...editorData, neweditor]
+        setEditorData(newdata)
+        setFrontTab(newdata.length-1)
+        document.title=neweditor['fileName']
+        
+    }
+
+    function openFileTab(filedir,filename) {
         if (!filedir.endsWith('/')) { filedir=filedir+'/' }
         var newfile=filedir+filename
 
         var neweditor={}
-        this.getFile(newfile)
-            .then(response => this.formatSpecialFiles(filename, response))
-            .then(response => neweditor = {'dir':filedir, 'fileName':filename, 'changed':false, 'content':response, 'mode':this.modeByFilename(filename) })
-            .then(response => this.setState({ frontTab: [...this.state.editorData, neweditor].length-1, editorData: [...this.state.editorData, neweditor] }))
-            .then(document.title = filename)
+        getFile(newfile)
+            .then(response => formatSpecialFiles(filename, response))
+            .then(response => handleOpenFile({'dir':filedir, 'fileName':filename, 'changed':false, 'content':response, 'mode':modeByFilename(filename) }))
     }
 
-    refreshFile = () => {
-        var editor=this.state.frontTab
-        var filedir=this.state.editorData[editor].dir
+    function refreshFile() {
+        var editor=frontTab
+        var filedir=editorData[editor].dir
         if (!filedir.endsWith('/')) { filedir=filedir+'/' }
-        var newfile=filedir+this.state.editorData[editor].fileName
+        var newfile=filedir+editorData[editor].fileName
 
-        this.getFile(newfile)
-            .then(response => this.handleAceChange(response))
+        getFile(newfile)
+            .then(response => handleAceChange(response))
     }
 
-    getFile = (filename) => {
+    function getFile(filename) {
         return fetch('/file'+filename)
-            .then((result)=>{ return result.text() })
+            .then(result=>{ return result.text() })
     }
 
-    handleSnackbarClose = () => {
-        this.setState({ snackbarOpen: false });
+    function handleSnackbarClose() {
+        setSnackbarOpen(false);
     };
 
-    render() {
-
-        const { classes } = this.props;
-        const { open, frontTab, editorData } = this.state;
-
-        return (
-            <div className={classes.appFrame}>
-                <TopBar open={this.state.open} frontTab={frontTab} editorData={editorData} handleDrawerOpen={this.handleDrawerOpen}
-                        refreshFile={this.refreshFile} saveFile={this.saveFile} handleChange={this.handleChange} closeTab={this.closeTab} />
-                <Sidebar open={this.state.open} startdir={this.state.startdir} openFile={this.openFileTab} favoritesMode={this.state.favoritesMode} 
-                            endFavoritesMode={this.endFavoritesMode} lastdir={this.state.lastdir} handleDrawerClose={this.handleDrawerClose}
-                            handleFavorites={this.handleFavorites} />
-                <main className={ open ? classes.content : classes.contentShift } >
-                    { editorData.length<1 ?
-                        <NoEditorCard />
-                        : 
-                        <Editors frontEditor={frontTab} editorData={editorData} handleAceChange={this.handleAceChange} />
-                    }
-                    <Snackbar
-                        anchorOrigin={{ 'vertical':'bottom', 'horizontal':'right' }}
-                        autoHideDuration={1000}
-                        open={this.state.snackbarOpen}
-                        onClose={this.handleSnackbarClose}
-                        ContentProps={{ 'aria-describedby': 'message-id', }}
-                        message={<span id="message-id">Saved { this.state.editorData.length < 1 ? null : this.state.editorData[this.state.frontTab].fileName }</span>}
-                    />
-                </main>
-            </div>
-        );
-    }
+    return (
+        <React.Fragment>
+            <TopBar open={open} frontTab={frontTab} editorData={editorData} handleDrawerOpen={handleDrawerOpen}
+                    refreshFile={refreshFile} saveFile={saveFile} handleChange={handleChange} closeTab={closeTab} />
+            <Sidebar open={open} startdir={startDir} openFile={openFileTab} favoritesMode={favoritesMode} 
+                        endFavoritesMode={endFavoritesMode} lastdir={lastDir} handleDrawerClose={handleDrawerClose}
+                        handleFavorites={handleFavorites} />
+            <Paper className={ open ? classes.content : classes.contentShift } >
+                { editorData.length<1 || frontTab<0 ?
+                    <NoEditorCard />
+                    :
+                    <React.Fragment>
+                        <Editors frontEditor={frontTab} editorData={editorData} handleAceChange={handleAceChange} />
+                        <Snackbar
+                            anchorOrigin={{ 'vertical':'bottom', 'horizontal':'right' }}
+                            autoHideDuration={1000}
+                            open={snackbarOpen}
+                            onClose={handleSnackbarClose}
+                            ContentProps={{ 'aria-describedby': 'message-id', }}
+                            message={<span id="message-id">{ frontTab < 0 ? null : "Saved "+editorData[frontTab].fileName }</span>}
+                        />
+                    </React.Fragment>
+                }
+            </Paper>
+        </React.Fragment>
+    );
 }
 
-App.propTypes = {
-    classes: PropTypes.object.isRequired,
-};
-
-export default withTheme()(withStyles(styles)(App));

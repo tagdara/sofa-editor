@@ -1,8 +1,7 @@
-import React from 'react';
-import { PropTypes } from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
-import { withTheme } from '@material-ui/core/styles';
-import { withThemeChange } from './Theme/withThemeChange';
+import React, { Component, memo } from 'react';
+import { useState, useEffect } from 'react';
+import { makeStyles } from '@material-ui/styles';
+import { withThemeChange } from './theme/SofaTheme';
 
 import Drawer from '@material-ui/core/Drawer';
 import IconButton from '@material-ui/core/IconButton';
@@ -15,12 +14,13 @@ import FilePicker from './filePicker';
 
 const drawerWidth = 320;
 
-const styles = theme => ({
+const useStyles = makeStyles( theme => ({
 
     drawerPaper: {
         position: 'relative',
         width: drawerWidth,
         border: 0,
+        height: "100%"
     },
     drawerHeader: {
         backgroundColor: theme.palette.primary.dark,
@@ -34,37 +34,32 @@ const styles = theme => ({
     spacer: {
         flexGrow: 1,
     },
-}); 
+})); 
 
-class Sidebar extends React.Component {
+
+function Sidebar(props) {
     
-    render() {
-
-        const { open, classes, startdir, favoritesMode, lastdir, frontTab, editorData } = this.props;
-
-        return (
-            <Drawer variant="persistent" open={open} classes={{ paper: classes.drawerPaper, }} >
-                <div className={classes.drawerHeader}>
-                    <IconButton onClick={this.props.handleFavorites}>
-                        <StarIcon />
-                    </IconButton>
-                    <IconButton onClick={() => this.props.setColorScheme(this.props.colorScheme=='dark' ? 'light' : 'dark')}>
-                        <CompareIcon />
-                    </IconButton>
-                    <div className={classes.spacer} />
-                    <IconButton onClick={this.props.handleDrawerClose}>
-                        <ChevronLeftIcon />
-                    </IconButton>
-                </div>
-                <FilePicker startdir={startdir} openFile={this.props.openFile} favoritesMode={this.props.favoritesMode} endFavoritesMode={this.props.endFavoritesMode} lastdir={this.props.lastdir} />
-            </Drawer>
-        );
-    }
+    const classes = useStyles();
+    
+    return (
+        <Drawer variant="persistent" open={props.open} classes={{ paper: classes.drawerPaper, }} >
+            <div className={classes.drawerHeader}>
+                <IconButton onClick={props.handleFavorites}>
+                    <StarIcon />
+                </IconButton>
+                <IconButton onClick={() => props.applyTheme(props.colorScheme=='dark' ? 'light' : 'dark')}>
+                    <CompareIcon />
+                </IconButton>
+                <div className={classes.spacer} />
+                <IconButton onClick={props.handleDrawerClose}>
+                    <ChevronLeftIcon />
+                </IconButton>
+            </div>
+            <FilePicker startdir={props.startdir} openFile={props.openFile} favoritesMode={props.favoritesMode} endFavoritesMode={props.endFavoritesMode} lastdir={props.lastdir} />
+        </Drawer>
+    );
 }
 
-Sidebar.propTypes = {
-    classes: PropTypes.object.isRequired,
-};
 
-export default withThemeChange(withTheme()(withStyles(styles)(Sidebar)));
+export default withThemeChange(Sidebar);
 
