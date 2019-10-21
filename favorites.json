@@ -22,5 +22,11 @@
         "path": "/",
         "type": "folder",
         "icon": "folder"
+    },
+    {
+        "name": "opt/oneshot",
+        "path": "/",
+        "type": "folder",
+        "icon": "folder"
     }
 ]
