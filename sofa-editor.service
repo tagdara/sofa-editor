@@ -1,0 +1,18 @@
+
+[Unit]
+Description=start sofs web-based editor
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/sofa-editor/sofa-editor.py
+Restart=on-failure
+RestartSec=10
+KillMode=process
+WorkingDirectory=/opt/sofa-editor
+[Install]
+WantedBy=multi-user.target
+
+
+
+

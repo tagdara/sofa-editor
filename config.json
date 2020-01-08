@@ -1,0 +1,15 @@
+
+{
+    "path": "/",
+    "hostname": "home.dayton.home",
+    "port": 8443,
+    "cert": "/opt/cert/dayton-home-wildcard.pem",
+    "key": "/opt/cert/dayton-home-wildcard.key",
+    "ca": "/opt/cert/ca.crt",
+    "excluded": [
+        ".pyc"
+    ],
+    "client": "/opt/sofa-editor/dist",
+    "log_directory": "/var/log/sofa"
+}
+
